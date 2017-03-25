@@ -45,19 +45,25 @@
     "@opam-alpha/merlin": "^ 2.5.0",
     "@opam-alpha/ocaml": "4.2.3",
     "dependency-env": "reasonml/dependency-env",
+    "discord.js": "^11.0.0",
+    "erlpack": "github:hammerandchisel/erlpack",
+    "gfm-code-blocks": "^1.0.0",
     "highlight.js": "^9.8.0",
+    "node-opus": "^0.2.4",
     "nopam": "reasonml/nopam",
     "ocamlBetterErrors": "0.0.10",
+    "opusscript": "0.0.3",
     "react": "^15.3.2",
     "react-codemirror": "^0.2.6",
     "react-copy-to-clipboard": "^4.2.3",
     "react-dom": "^15.3.2",
     "realpath": "*",
-    "reason": "facebook/reason",
+    "reason": "facebook/reason#09d27adac25f13ee4f132fe6c5e192fdfc31a81b",
     "reason-js": "0.0.15",
+    "reason-react": "reasonml/reason-react",
     "rebase": "glennsl/rebase#v0.0.1",
     "rebel": "reasonml/rebel",
-    "reason-react": "reasonml/reason-react"
+    "uws": "^0.14.0"
   },
   "rebel": {
     "targets": [
