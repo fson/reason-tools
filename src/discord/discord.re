@@ -30,6 +30,13 @@ let syntaxLang lang =>
   | _ => "rust"
   };
 
+let humanLang lang =>
+  switch lang {
+  | "ML" => "OCaml"
+  | "RE"
+  | _ => "Reason"
+  };
+
 let contains s1 s2 =>
   try {
     let len = String.length s2;
@@ -51,6 +58,11 @@ let handleReady _ => Js.log "ready!";
 
 let codifyString code lang => "\n```" ^ lang ^ "\n" ^ code ^ "\n" ^ "```";
 
+let languageString inLang outLang =>
+  "here is what your " ^ humanLang inLang ^ " code would look like in " ^ humanLang outLang ^ ":";
+
+let errorString = "It looks like you asked for me, but I can't find any valid OCaml or Reason code in this message. :(";
+
 let handleMessage message => {
   let content = getContent message;
   let respond = hasRefmt content;
@@ -62,7 +74,10 @@ let handleMessage message => {
     };
   switch (respond, result) {
   | (true, Some (Ok res)) =>
-    reply message (codifyString res.outText (syntaxLang res.outLang))
+    reply
+      message
+      (languageString res.inLang res.outLang ^ codifyString res.outText (syntaxLang res.outLang))
+  | (true, Some (Error _)) => reply message errorString
   | _ => ()
   }
 };
