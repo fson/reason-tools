@@ -65,7 +65,7 @@ let contains s1 s2 =>
 
 let getCodeBlocks content => content |> codeBlocks |> Js.Array.map getCode;
 
-let hasRefmt content => contains content "refmt";
+let hasRefmt content => contains content "refmtthis";
 
 let shouldReply message =>
   switch (message |> getContent |> hasRefmt, getAuthor message, message |> getChannel |> getType) {
@@ -107,7 +107,7 @@ let handleMessage message => {
   Js.log message;
   let content = getContent message;
   let codeBlocks = getCodeBlocks content;
-  if (shouldReply message) {
+  if (shouldReply message && Array.length codeBlocks > 0) {
     let results = codeBlocks |> Array.to_list |> List.map refmtCodeBlock |> listFilterMap;
     switch (List.length results) {
     | 0 => reply message errorString
