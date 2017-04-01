@@ -2,6 +2,10 @@ type client;
 
 type message;
 
+type user;
+
+type channel;
+
 type codeBlock;
 
 external createClient : unit => client = "Client" [@@bs.module "discord.js"] [@@bs.new];
@@ -14,6 +18,15 @@ external onMessage : client => _ [@bs.as "message"] => (message => unit) => unit
   "on" [@@bs.send];
 
 external getContent : message => string = "content" [@@bs.get];
+
+external getChannel : message => channel = "channel" [@@bs.get];
+
+external getType : channel => string = "type" [@@bs.get];
+
+external getAuthor : message => option user =
+  "author" [@@bs.get] [@@bs.return null_undefined_to_opt];
+
+external isBot : user => bool = "bot" [@@bs.get];
 
 external reply : message => string => unit = "" [@@bs.send];
 
@@ -54,7 +67,16 @@ let getCodeBlocks content => content |> codeBlocks |> Js.Array.map getCode;
 
 let hasRefmt content => contains content "refmt";
 
+let shouldReply message =>
+  switch (message |> getContent |> hasRefmt, getAuthor message, message |> getChannel |> getType) {
+  | (false, Some author, "dm")
+  | (true, Some author, _) when not (isBot author) => true
+  | _ => false
+  };
+
 let handleReady _ => Js.log "ready!";
+
+let break = "\n";
 
 let codifyString code lang => "\n```" ^ lang ^ "\n" ^ code ^ "\n" ^ "```";
 
@@ -63,22 +85,34 @@ let languageString inLang outLang =>
 
 let errorString = "It looks like you asked for me, but I can't find any valid OCaml or Reason code in this message. :(";
 
-let handleMessage message => {
-  let content = getContent message;
-  let respond = hasRefmt content;
-  let codeBlocks = getCodeBlocks content;
-  let result =
-    switch (Js.Array.pop codeBlocks) {
-    | Some block => Some (block |> RefmtBS.refmt |> RefmtBS.parse)
-    | None => None
+let refmtCodeBlock codeBlock => codeBlock |> RefmtBS.refmt |> RefmtBS.parse;
+
+let singleResultString (res: Protocol.Refmt.payload) =>
+  languageString res.inLang res.outLang ^ codifyString res.outText (syntaxLang res.outLang);
+
+let listFilterMap ls => {
+  let rec listFilterMap_ ls acc =>
+    switch ls {
+    | [] => acc
+    | [item, ...rest] =>
+      switch item {
+      | Rebase.Ok item => [item, ...listFilterMap_ rest acc]
+      | _ => acc
+      }
     };
-  switch (respond, result) {
-  | (true, Some (Ok res)) =>
-    reply
-      message
-      (languageString res.inLang res.outLang ^ codifyString res.outText (syntaxLang res.outLang))
-  | (true, Some (Error _)) => reply message errorString
-  | _ => ()
+  listFilterMap_ ls []
+};
+
+let handleMessage message => {
+  Js.log message;
+  let content = getContent message;
+  let codeBlocks = getCodeBlocks content;
+  if (shouldReply message) {
+    let results = codeBlocks |> Array.to_list |> List.map refmtCodeBlock |> listFilterMap;
+    switch (List.length results) {
+    | 0 => reply message errorString
+    | _ => reply message (List.map singleResultString results |> String.concat "\n")
+    }
   }
 };
 
